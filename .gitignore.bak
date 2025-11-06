@@ -18,8 +18,3 @@ logs/
 # IDE
 .vscode/
 .idea/
-
-# Assets (avoid committing personal data)
-assets/dropbox/*
-assets/samples/*
-!assets/README.md
