@@ -1,0 +1,8 @@
+
+Booking.com Payout statement
+Reference: ABC12345
+Check-in: 2023-10-20  Check-out: 2023-10-23  Nights: 3
+Guests: 2 adults
+Amount (Total): € 1.234,56
+Commission: € 185,18
+Net payout: € 1.049,38

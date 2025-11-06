@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+import os, sys, json, shutil, subprocess, datetime
+from pathlib import Path
+
+# === CONFIG ===
+REPO_DIR = Path("/Users/simonecarta/Documents/BookingTaxCalculation").resolve()
+QUEUE_DIR = Path(os.environ.get("DRIP_QUEUE", "/Users/simonecarta/drip_queue")).resolve()
+STATE_FILE = REPO_DIR / ".drip_state.json"
+GIT_USER_NAME = "simonecarta"
+GIT_USER_EMAIL = "186937480+misoone-ops@users.noreply.github.com"
+BRANCH = os.environ.get("DRIP_BRANCH", "main")
+FILES_PER_RUN = int(os.environ.get("DRIP_FILES_PER_RUN", "1"))
+
+def run(cmd, cwd=None, check=True):
+    return subprocess.run(cmd, cwd=cwd, check=check, text=True, capture_output=True)
+
+def configure_git():
+    run(["git", "config", "user.name", GIT_USER_NAME], cwd=REPO_DIR)
+    run(["git", "config", "user.email", GIT_USER_EMAIL], cwd=REPO_DIR)
+
+def load_state():
+    if STATE_FILE.exists():
+        return json.loads(STATE_FILE.read_text())
+    return {"processed": []}
+
+def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+def list_queue_files():
+    files = []
+    for p in sorted(QUEUE_DIR.rglob("*")):
+        if p.is_file():
+            if p.name in (".DS_Store",):
+                continue
+            files.append(p)
+    return files
+
+def next_files_to_process(state):
+    processed = set(state.get("processed", []))
+    candidates = [p for p in list_queue_files() if str(p) not in processed]
+    return candidates[:FILES_PER_RUN]
+
+def ensure_branch():
+    run(["git", "fetch", "origin", BRANCH], cwd=REPO_DIR, check=False)
+    run(["git", "checkout", BRANCH], cwd=REPO_DIR)
+    run(["git", "pull", "origin", BRANCH], cwd=REPO_DIR, check=False)
+
+def copy_into_repo(src: Path):
+    rel = src.relative_to(QUEUE_DIR)
+    dest = REPO_DIR / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        return None, f"SKIP (exists) {rel}"
+    shutil.copy2(src, dest)
+    return rel, None
+
+def commit_and_push(rel_paths):
+    if not rel_paths:
+        return
+    run(["git", "add"] + [str(p) for p in rel_paths], cwd=REPO_DIR)
+    today = datetime.date.today().isoformat()
+    msg = f"drip: add {len(rel_paths)} file(s) on {today}:\n" + "\n".join([str(p) for p in rel_paths])
+    run(["git", "commit", "-m", msg], cwd=REPO_DIR)
+    run(["git", "push", "origin", BRANCH], cwd=REPO_DIR)
+
+def main():
+    if not REPO_DIR.exists():
+        print(f"Repo not found: {REPO_DIR}", file=sys.stderr); sys.exit(1)
+    if not QUEUE_DIR.exists():
+        print(f"Queue not found: {QUEUE_DIR}", file=sys.stderr); sys.exit(1)
+
+    configure_git()
+    ensure_branch()
+    state = load_state()
+    to_process = next_files_to_process(state)
+
+    if not to_process:
+        print("Queue empty. Nothing to do."); return
+
+    added, skipped = [], []
+    for src in to_process:
+        rel, err = copy_into_repo(src)
+        if rel is not None:
+            added.append(rel)
+            state["processed"].append(str(src))
+        else:
+            skipped.append(err or f"Skipped {src}")
+
+    if added:
+        commit_and_push(added)
+        save_state(state)
+        print("ADDED:", *[str(a) for a in added], sep="\n")
+    if skipped:
+        print("SKIPPED:", *skipped, sep="\n")
+
+if __name__ == "__main__":
+    main()
+

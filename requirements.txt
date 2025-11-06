@@ -4,7 +4,7 @@ uvicorn[standard]>=0.30
 pydantic>=2.6
 pandas>=2.0
 pdfplumber>=0.11
-invoice2data>=0.5
+invoice2data==0.4.5
 PyYAML>=6.0
 watchdog>=4.0
 pytest>=8.0
