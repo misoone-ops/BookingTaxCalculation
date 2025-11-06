@@ -1,0 +1,15 @@
+
+currency: EUR
+booking_commission_pct: 0.15
+iva_pct: 0.10
+withholding_tax_pct: 0.00
+cleaning_fee_fixed: 0.0
+other_fixed_costs: 0.0
+city_tax_per_person_per_night: 0.0
+
+mappings:
+  gross_total_keys: ["gross", "total", "lordo"]
+  commission_keys: ["commission", "booking_commission", "commissioni"]
+  payout_keys: ["payout", "netto_booking"]
+  nights_keys: ["nights", "notti"]
+  guests_keys: ["guests", "ospiti"]

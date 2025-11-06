@@ -1,0 +1,37 @@
+
+options:
+  currency: EUR
+
+keywords:
+  - Booking.com
+
+fields:
+  gross:
+    required: false
+    type: float
+    regex: '(?i)(total|amount|totale)\D{0,10}([0-9][0-9\., ]*)\s?(?:€|eur)?'
+    group: 2
+
+  commission:
+    required: false
+    type: float
+    regex: '(?i)(commission|commissioni)\D{0,10}([0-9][0-9\., ]*)'
+    group: 2
+
+  payout:
+    required: false
+    type: float
+    regex: '(?i)(payout|pagamento|netto)\D{0,10}([0-9][0-9\., ]*)'
+    group: 2
+
+  nights:
+    required: false
+    type: int
+    regex: '(?i)(nights|notti)\D{0,10}([0-9]+)'
+    group: 2
+
+  guests:
+    required: false
+    type: int
+    regex: '(?i)(guests|ospiti|persone)\D{0,10}([0-9]+)'
+    group: 2
